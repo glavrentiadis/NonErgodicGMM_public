@@ -7,7 +7,7 @@ Created on Fri Apr 24 02:34:34 2020
 """
 #change working directory
 import os
-os.chdir('/mnt/halcloud_nfs/glavrent/Research/Public_Repos/NonErgodicGMM_public/analyses/regression')
+os.chdir('/mnt/halcloud_nfs/glavrent/Research/Public_repos/NonErgodicGMM_public/analyses/regression')
 
 #load variables
 import pathlib
