@@ -37,6 +37,7 @@ import pylib.pylib_contour_plots as pycplt
 freq = 1.0000
 GMMmodel       = 'NergEASGMM_f%.2fhz_NGAWestCA'%freq
 analysis_sufix = '_laten_var_unbound_hyp'
+fname_analysis = r'%s%s'%(GMMmodel,analysis_sufix)
 #input filenames
 fname_resfile  = '../../data/BA18resNGA2WestCA_freq%.4f_allnergcoef.csv'%freq
 fname_cellinfo = '../../data/NGA2WestCA_cellinfo.csv'
@@ -50,7 +51,6 @@ flag_plot_path = False
 
 # Load Data
 # ---------------------------
-fname_analysis = r'%s%s'%(GMMmodel,analysis_sufix)
 df_cellinfo         = pd.read_csv(fname_cellinfo)
 df_posterior_pdf    = pd.read_csv(dir_stan + fname_analysis + '_stan_posterior' +  '.csv', index_col=0)
 df_coeffs           = pd.read_csv(dir_stan + fname_analysis + '_stan_coefficients' + '.csv')

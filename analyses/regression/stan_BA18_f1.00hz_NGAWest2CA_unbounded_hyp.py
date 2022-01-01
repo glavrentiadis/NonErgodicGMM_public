@@ -35,6 +35,7 @@ flag_runstan = True
 #analyis filename
 GMMmodel        = 'NergEASGMM_f%.2fhz_NGAWestCA'%freq
 analysis_sufix  = '_laten_var_unbound_hyp'
+fname_analysis = r'%s%s'%(GMMmodel,analysis_sufix)
 #maximum magnitude for sub-regional classification
 mag_sreg = 5
 #residuals flatfile
@@ -45,7 +46,7 @@ fname_cellinfo      = '../../data/NGA2WestCA_cellinfo.csv'
 dir_out             = '../../data/output/NergEASGMM_f%.2fhz/'%freq
 
 #create output directory
-if not os.path.isdir(dir_out ): pathlib.Path(dir_out ).mkdir(parents=True, exist_ok=True) #create output dir if not existent
+if not os.path.isdir(dir_out): pathlib.Path(dir_out).mkdir(parents=True, exist_ok=True) #create output dir if not existent
 
 #latlon window
 win_eq_latlon = np.array([[-np.inf, +np.inf],[-np.inf, +np.inf]])
@@ -236,7 +237,7 @@ model {
     shift_sr[i] = dot_product(dc_0e,SREG[i]);
 
   //Mean non-ergodic including dB
-  mu_rec_nerg_dB = dc_0 + shift_sr[eq] + dc_1as[eq] + dc_1as[stat] + dc_1bs[stat] + shift_inattent + dB[eq];
+  mu_rec_nerg_dB = dc_0 + shift_sr[eq] + dc_1e[eq] + dc_1as[stat] + dc_1bs[stat] + shift_inattent + dB[eq];
   
   Y ~ normal(mu_rec_nerg_dB,phi_0);
 
@@ -249,8 +250,6 @@ control_stan = {'adapt_delta':0.9,
 
 # Read data
 # ---------------------------
-fname_analysis = r'%s%s'%(GMMmodel,analysis_sufix)
-
 #spectral acc. flatfile
 res_flatfile = pd.read_csv(fname_flatfile)
 print(res_flatfile.columns)
@@ -276,10 +275,10 @@ del i_inside_win
 n_data = len(res_flatfile.eqid)
 
 #earthquake data
-data_eq_all = res_flatfile[['eqid','mag','X1a','eqUTMx', 'eqUTMy','sub_region']].values
+data_eq_all = res_flatfile[['eqid','mag','eqUTMx', 'eqUTMy','sub_region']].values
 _, eq_inv, eq_idx = np.unique(res_flatfile[['eqid']], axis=0, return_inverse=True, return_index=True)
 data_eq = data_eq_all[eq_inv,:]
-X_eq = data_eq[:,[3,4]] #earthquake coordinates
+X_eq = data_eq[:,[2,3]] #earthquake coordinates
 #sub region classification
 sreg = np.array([data_eq[:,5] == sr for sr in np.unique(data_eq[:,5])]).astype(int).T
 sreg[data_eq[:,1] > mag_sreg] = 0
@@ -288,10 +287,10 @@ eq_idx = eq_idx + 1
 n_eq = len(data_eq)
 
 #station data
-data_stat_all = res_flatfile[['ssn','Vs30','X1b','X8','staUTMx','staUTMy']].values
+data_stat_all = res_flatfile[['ssn','Vs30','staUTMx','staUTMy']].values
 _, sta_inv, sta_idx = np.unique( res_flatfile[['ssn']].values, axis = 0, return_inverse=True, return_index=True)
 data_stat = data_stat_all[sta_inv,:]
-X_stat = data_stat[:,[4,5]] #station coordinates
+X_stat = data_stat[:,[2,3]] #station coordinates
 #create station indices for all covariates
 sta_idx = sta_idx + 1
 n_stat = len(data_stat)
