@@ -5,6 +5,7 @@
 #   e.g. Mbreak, Rrup, Vsref 
 
 #arithmetic libraries
+import re
 import numpy as np
 import numpy.matlib
 from scipy import linalg as scipylalg
@@ -442,9 +443,7 @@ class NonErgEASGMMCoeffBase(BA18):
 
         #spatial info
         self.zone_utm  = zone_utm
-        #import pdb; pdb.set_trace()
-        #if not (self.zone_utm is None): self.proj_utm  = pyproj.Proj("+proj=utm +zone="+zone_utm+", +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
-        if not (self.zone_utm is None): self.proj_utm  = pyproj.Proj("+proj=utm +zone="+zone_utm+" +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+        if not (self.zone_utm is None): self.proj_utm  = pyproj.Proj("+proj=utm +zone="+re.sub('[a-zA-Z]','',zone_utm)+" +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
         #grid coordinates for spatially varying coefficients
         self.grid_X = grid_Xutm
         #coefficient coordinates if not specified on grid
@@ -1488,7 +1487,7 @@ class NonErgEASGMMCoeffGrid(NonErgEASGMMCoeffBase):
         if self.ssn  is None: self.ssn = ssn 
         if self.zone_utm is None: 
             self.zone_utm = zone_utm
-            self.proj_utm  = pyproj.Proj("+proj=utm +zone="+zone_utm+", +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+            self.proj_utm  = pyproj.Proj("+proj=utm +zone="+re.sub('[a-zA-Z]','',zone_utm)+" +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
         if self.grid_X   is None: self.grid_X = g_Xutm 
         if self.cell_X   is None: self.cell_X = cA_Xutm
         
@@ -1710,7 +1709,7 @@ class NonErgEASGMMCoeffCond(NonErgEASGMMCoeffBase):
         #initialize projection utm zone
         if self.zone_utm is None: 
             self.zone_utm = zone_utm
-            self.proj_utm  = pyproj.Proj("+proj=utm +zone="+zone_utm+", +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+            self.proj_utm  = pyproj.Proj("+proj=utm +zone="+re.sub('[a-zA-Z]','',zone_utm)+" +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
         #initilalize station terms
         if not len(self.dS2S_mu):  self.dS2S_mu  = pd.DataFrame(ssn, columns=['id'])
         if not len(self.dS2S_sig): self.dS2S_sig = pd.DataFrame(ssn, columns=['id'])
