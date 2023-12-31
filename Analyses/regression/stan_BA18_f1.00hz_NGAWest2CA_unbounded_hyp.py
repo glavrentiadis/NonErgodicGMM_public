@@ -8,9 +8,7 @@ Created on Tue Jun 15 15:54:37 2020
 
 #change working directory
 import os
-os.chdir('/mnt/halcloud_nfs/glavrent/Research/Public_repos/NonErgodicGMM_public/analyses/regression')
-
-#load variables
+#load libraries
 import pathlib
 import glob
 import re           #regular expression package
@@ -39,11 +37,11 @@ fname_analysis = r'%s%s'%(GMMmodel,analysis_sufix)
 #maximum magnitude for sub-regional classification
 mag_sreg = 5
 #residuals flatfile
-fname_flatfile      = '../../data/BA18resNGA2WestCA_freq%.4f_allnergcoef.csv'%freq
-fname_celldistfile  = '../../data/NGA2WestCA_distancematrix.csv'
-fname_cellinfo      = '../../data/NGA2WestCA_cellinfo.csv'
+fname_flatfile      = '../../Data/regression/input_files/BA18resNGA2WestCA_freq%.4f_allnergcoef.csv'%freq
+fname_celldistfile  = '../../Data/regression/input_files/NGA2WestCA_distancematrix.csv'
+fname_cellinfo      = '../../Data/regression/input_files/NGA2WestCA_cellinfo.csv'
 #output directory
-dir_out             = '../../data/output/NergEASGMM_f%.2fhz/'%freq
+dir_out             = '../../Data/regression/output/NergEASGMM_f%.2fhz/'%freq
 
 #create output directory
 if not os.path.isdir(dir_out): pathlib.Path(dir_out).mkdir(parents=True, exist_ok=True) #create output dir if not existent

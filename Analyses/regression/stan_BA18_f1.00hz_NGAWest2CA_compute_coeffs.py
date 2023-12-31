@@ -7,9 +7,7 @@ Created on Fri Apr 24 02:34:34 2020
 """
 #change working directory
 import os
-os.chdir('/mnt/halcloud_nfs/glavrent/Research/Public_repos/NonErgodicGMM_public/analyses/regression')
-
-#load variables
+#load libraries
 import pathlib
 import glob
 import re           #regular expression package
@@ -39,9 +37,9 @@ GMMmodel       = 'NergEASGMM_f%.2fhz_NGAWestCA'%freq
 analysis_sufix = '_laten_var_unbound_hyp'
 fname_analysis = r'%s%s'%(GMMmodel,analysis_sufix)
 #input filenames
-fname_resfile  = '../../data/BA18resNGA2WestCA_freq%.4f_allnergcoef.csv'%freq
-fname_cellinfo = '../../data/NGA2WestCA_cellinfo.csv'
-dir_stan       = '../../data/output/NergEASGMM_f%.2fhz/'%freq
+fname_resfile  = '../../Data/regression/input_files/BA18resNGA2WestCA_freq%.4f_allnergcoef.csv'%freq
+fname_cellinfo = '../../Data/regression/input_files/NGA2WestCA_cellinfo.csv'
+dir_stan       = '../../Data/regression/output/NergEASGMM_f%.2fhz/'%freq
 
 #flags option
 flag_data_out = False
@@ -212,12 +210,12 @@ c1as_mu, c1as_sig, c1as_cov  = pygp.SampleCoeffs(coeff_X, stat_X_train[sta_idx_i
                                                     hyp_ell = ell_1as, hyp_omega = omega_1as)
 
 #earthquake constant with zero correlation length (c_1bs)
-c1bs_mu, c1bs_sig               = df_coeffs.loc[sta_idx_inv,'b_1bi_mean'].values, df_coeffs.loc[sta_idx_inv,'b_1bi_unc'].values
+c1bs_mu, c1bs_sig               = df_coeffs.loc[sta_idx_inv,'dc_1bs_mean'].values, df_coeffs.loc[sta_idx_inv,'dc_1bs_unc'].values
 c1bs_cov                        = np.diag(c1bs_sig**2)
 
 #attenuation coefficient (c_cA)
 ca_mu, ca_sig, ca_cov           = pygp.SampleAttenCoeffsNegExp(cell_X, cell_X_train, 
-                                                                cA_data_mu = df_cellatten['b_cA_mean'].values, cA_data_sig = df_cellatten['b_cA_unc'].values,
+                                                                cA_data_mu = df_cellatten['c_ca_mean'].values, cA_data_sig = df_cellatten['c_ca_unc'].values,
                                                                 mu_ca = mu_ca, ell_ca = ell_ca1, omega_ca = omega_ca1, 
                                                                 pi_ca = pi_ca, sigma_ca=omega_ca2)
 ca_mu[ca_mu>0] = 0.
@@ -244,7 +242,7 @@ pd_summary_c1as_cov = pd.concat((pd_summary_coeffs['grid_id'],  pd.DataFrame(c1a
 #save c1bs
 summary_c1bs = {'ssn': sta_id, 'lat': stat_latlon[:,0], 'lon': stat_latlon[:,1], 
                                'utmX': stat_X[:,0],     'utmY': stat_X[:,1],     'utmZone': [utm_zone] * len(stat_latlon),
-                               'dc1bs_mu': c1as_mu, 'dc1bs_sig': c1bs_sig}
+                               'dc1bs_mu': c1bs_mu, 'dc1bs_sig': c1bs_sig}
 pd_summary_c1bs = pd.DataFrame(summary_c1bs)
 
 #save anelastic attenuation coeffs
@@ -262,27 +260,25 @@ summary_dBe = {'eqid': eq_id, 'lat': eq_latlon[:,0], 'lon': eq_latlon[:,1],
 pd_summary_dBe = pd.DataFrame(summary_dBe)
 
 #save hyper-parameters
-pd_summary_hyp = df_posterior_pdf.rename(columns={'b_X0':'c0', 'rho_eqX1a':'c1a_rho',                                 'rho_statX1bii':'c1b_rho', 
-                                                               'theta_eqX1a':'c1a_theta', 'theta_statX1bi':'omega_1bs', 'theta_statX1bii':'c1b_theta',
-                                                               'ell_ca1':'cA_rho', 'omega_ca1':'cA_theta', 'omega_ca2': 'ca_sigma'})
-pd_summary_hyp.loc[:,'c0N']   = np.nan
-pd_summary_hyp.loc[:,'c0S']   = np.nan
-pd_summary_hyp.loc[:,'ca_mu'] = np.nan
-pd_summary_hyp.loc[:,'cA_pi'] = np.nan
-pd_summary_hyp.loc[:,'c0N'][-1]   = 0.
-pd_summary_hyp.loc[:,'c0S'][-1]   = 0.
-pd_summary_hyp.loc[:,'ca_mu'][-1] = mu_ca
-pd_summary_hyp.loc[:,'cA_pi'][-1] = pi_ca
-pd_summary_hyp = pd_summary_hyp[['c0','c0N','c0S',
-                                 'c1a_rho', 'c1a_theta', 'c1b_rho', 'c1b_theta', 
-                                 'ca_mu', 'cA_rho',  'cA_theta', 'ca_sigma',  'cA_pi',
-                                 'omega_1bs', 'tau_0', 'phi_0']]
+pd_summary_hyp = df_posterior_pdf.copy()
+pd_summary_hyp.loc[:,'dc_0N']     = np.nan
+pd_summary_hyp.loc[:,'dc_0S']     = np.nan
+pd_summary_hyp.loc[:,'mu_ca']     = np.nan
+pd_summary_hyp.loc[:,'pi_ca']     = np.nan
+pd_summary_hyp.loc[:,'dc_0N'][-1] = 0.
+pd_summary_hyp.loc[:,'dc_0S'][-1] = 0.
+pd_summary_hyp.loc[:,'mu_ca'][-1] = mu_ca
+pd_summary_hyp.loc[:,'pi_ca'][-1] = pi_ca
+pd_summary_hyp = pd_summary_hyp[['dc_0','dc_0N','dc_0S',
+                                 'ell_1e', 'omega_1e', 'ell_1as', 'omega_1as', 'omega_1bs',
+                                 'mu_ca', 'ell_ca1',  'omega_ca1', 'omega_ca2', 'pi_ca',
+                                 'tau_0', 'phi_0']]
 
 #save regression data
 #save c1a data
 summary_data_c1a = {'eqid': eq_id, 'lat': eq_latlon[:,0], 'lon': eq_latlon[:,1], 
                                    'utmX': eq_X[:,0],     'utmY': eq_X[:,1],     'utmZone': [utm_zone] * len(eq_latlon),
-                                   'c1e_mu': df_coeffs.loc[eq_idx_inv,'b_1a_mean'].values, 'c1e_sig':  df_coeffs.loc[eq_idx_inv,'b_1a_unc'].values}
+                                   'dc_1e_mu': df_coeffs.loc[eq_idx_inv,'dc_1e_mean'].values, 'dc_1e_sig':  df_coeffs.loc[eq_idx_inv,'dc_1e_unc'].values}
 pd_summary_data_c1a = pd.DataFrame(summary_data_c1a)
 
 #save c1bi data
@@ -291,15 +287,16 @@ pd_summary_data_c1bi = pd_summary_c1bs
 #save c1bii data
 summary_data_c1bii = {'ssn': sta_id, 'lat': stat_latlon[:,0], 'lon': stat_latlon[:,1], 
                                      'utmX': stat_X[:,0],     'utmY': stat_X[:,1],     'utmZone': [utm_zone] * len(stat_latlon),
-                                     'c1as_mu': df_coeffs.loc[sta_idx_inv,'b_1bii_mean'].values, 'c1as_sig':  df_coeffs.loc[sta_idx_inv,'b_1bii_unc'].values}
+                                     'dc_1as_mu': df_coeffs.loc[sta_idx_inv,'dc_1as_mean'].values, 'dc_1as_sig':  df_coeffs.loc[sta_idx_inv,'dc_1as_unc'].values}
 pd_summary_data_c1bii = pd.DataFrame(summary_data_c1bii)
 
 #save cA data
-pd_summary_data_cA = df_cellatten.rename(columns={'cell_i':'cell_id','cellX':'utmX','cellY':'utmY','zoneUTM':'utmZone',
-                                                  'b_c7_erg':'cA_erg','b_cA_mean':'ca_mu','b_cA_unc':'ca_sig'})
-pd_summary_data_cA.loc[:,'dca_mu']  = pd_summary_data_cA.ca_mu - mu_ca
+pd_summary_data_cA = df_cellatten.rename(columns={'cell_i':'cell_id',
+                                                  'cellX':'utmX','cellY':'utmY','zoneUTM':'utmZone',
+                                                  'c_ca_unc':'c_ca_sig'})
+pd_summary_data_cA.loc[:,'dc_ca_mean']  = pd_summary_data_cA.c_ca_mean - mu_ca
 pd_summary_data_cA.loc[:,['lat','lon']] = cell_latlon_train
-pd_summary_data_cA = pd_summary_data_cA[['cell_id','lat','lon','utmX','utmY','utmZone','cA_erg','ca_mu','dca_mu','ca_sig']]
+pd_summary_data_cA = pd_summary_data_cA[['cell_id','lat','lon','utmX','utmY','utmZone','c_a_erg','c_ca_mean','dc_ca_mean','c_ca_sig']]
 
 #save dBe data
 pd_summary_data_dBe = pd_summary_dBe
@@ -329,7 +326,7 @@ if flag_data_out:
     pd_summary_coeffs.to_hdf(dir_out    + fname_analysis + '_coeffs_all' + '.h5', key='coeffs_spvar',     mode='w', complevel=9, index=False)
     pd_summary_c1bs.to_hdf(dir_out      + fname_analysis + '_coeffs_all' + '.h5', key='coeffs_dS2S',      mode='a', complevel=9, index=False)
     pd_summary_c1e_cov.to_hdf(dir_out   + fname_analysis + '_coeffs_all' + '.h5', key='coeffs_c1e_cov',   mode='a', complevel=9, index=False)
-    pd_summary_c1as_cov.to_hdf(dir_out + fname_analysis + '_coeffs_all' + '.h5', key='coeffs_c1b_cov',   mode='a', complevel=9, index=False)
+    pd_summary_c1as_cov.to_hdf(dir_out  + fname_analysis + '_coeffs_all' + '.h5', key='coeffs_c1b_cov',   mode='a', complevel=9, index=False)
     pd_summary_cA.to_hdf(dir_out        + fname_analysis + '_coeffs_all' + '.h5', key='coeffs_cA',        mode='a', complevel=9, index=False)
     pd_summary_ca_cov.to_hdf(dir_out    + fname_analysis + '_coeffs_all' + '.h5', key='coeffs_ca_cov',    mode='a', complevel=9, index=False)
     pd_summary_dBe.to_hdf(dir_out       + fname_analysis + '_coeffs_all' + '.h5', key='coeffs_dBe',       mode='a', complevel=9, index=False)
@@ -361,7 +358,7 @@ if flag_data_out:
 fname_fig = fname_analysis + '_c1a_med'
 cbar_label = '$\mu_{\delta c_{1,e}}$' if flag_pub else '$\mu_{\delta c_{1,e}} (f=%.2fhz)$'%freq
 cbar_label = '$\mu( \delta c_{1,e} )$' if flag_pub else '$\mu( \delta c_{1,e} )$ ($f=%.2fhz$)'%freq
-data2plot = pd_summary_coeffs[['lat','lon','c1e_mu']].values
+data2plot = pd_summary_coeffs[['lat','lon','dc1e_mu']].values
 #create figure
 fig, ax, cbar, data_crs, _ = pycplt.PlotCoeffCAMapMed(data2plot, cmin=cbar_lim_c1e_mu[0],  cmax=cbar_lim_c1e_mu[1], log_cbar = False, frmt_clb = '%.2f')
 ax.set_xlim( plot_latlon_win[:,1] ) #ax.set_xlim(ax.get_xlim())
@@ -390,7 +387,7 @@ fig.savefig( dir_out + fname_fig + '.png')
 fname_fig = fname_analysis + '_c1e_sigma'
 cbar_label = '$\psi_{\delta c_{1,e}}$' if flag_pub else '$\psi_{\delta c_{1,e}} (f=%.2fhz)$'%freq
 cbar_label = '$\psi( \delta c_{1,e} )$' if flag_pub else '$\psi( \delta c_{1,e})$ ($f=%.2fhz$)'%freq
-data2plot = pd_summary_coeffs[['lat','lon','c1e_sig']].values
+data2plot = pd_summary_coeffs[['lat','lon','dc1e_sig']].values
 #create figure
 fig, ax, cbar, data_crs, _ = pycplt.PlotCoeffCAMapSig(data2plot, cmin=cbar_lim_c1e_sig[0],  cmax=cbar_lim_c1e_sig[1], log_cbar=False)
 ax.set_xlim( plot_latlon_win[:,1] ) #ax.set_xlim(ax.get_xlim())
@@ -421,7 +418,7 @@ fig.savefig( dir_out + fname_fig + '.png')
 fname_fig = fname_analysis + '_c1b_med'
 cbar_label = '$\mu_{\delta c_{1a,s}}$'  if flag_pub else '$\mu_{\delta c_{1a,s}} (f=%.2fhz)$'%freq
 cbar_label = '$\mu( \delta c_{1a,s} )$' if flag_pub else '$\mu( \deltac_{1a,s} )$ ($f=%.2fhz$)'%freq
-data2plot = pd_summary_coeffs[['lat','lon','c1as_mu']].values
+data2plot = pd_summary_coeffs[['lat','lon','dc1as_mu']].values
 #create figure
 fig, ax, cbar, data_crs, _ = pycplt.PlotCoeffCAMapMed(data2plot, cmin=cbar_lim_c1as_mu[0],  cmax=cbar_lim_c1as_mu[1], log_cbar = False, frmt_clb = '%.2f')
 ax.set_xlim( plot_latlon_win[:,1] ) #ax.set_xlim(ax.get_xlim())
@@ -450,7 +447,7 @@ fig.savefig( dir_out + fname_fig + '.png')
 fname_fig = fname_analysis + '_c1as_sigma'
 cbar_label = '$\psi_{\delta c_{1a,s}}$'  if flag_pub else '$\psi_{\delta c_{1a,s}} (f=%.2fhz)$'%freq
 cbar_label = '$\psi( \delta c_{1a,s} )$' if flag_pub else '$\psi( \delta c_{1a,s} )$ ($f=%.2fhz$)'%freq
-data2plot = pd_summary_coeffs[['lat','lon','c1as_sig']].values
+data2plot = pd_summary_coeffs[['lat','lon','dc1as_sig']].values
 #create figure
 fig, ax, cbar, data_crs, _ = pycplt.PlotCoeffCAMapSig(data2plot, cmin=cbar_lim_c1as_sig[0],  cmax=cbar_lim_c1as_sig[1], log_cbar=False)
 ax.set_xlim( plot_latlon_win[:,1] ) #ax.set_xlim(ax.get_xlim())
